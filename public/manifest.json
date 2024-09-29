@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Procrastinot",
   "version": "0.1.0",
-  "description": "My Chrome Extension",
+  "description": "AI-based extension to manage workspaces and close procrastination-inducing tabs.",
   "icons": {
     "16": "icons/icon_16.png",
     "32": "icons/icon_32.png",
@@ -17,8 +17,12 @@
     "default_popup": "popup.html"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
   ],
+  "host_permissions": ["*://*/*"],
   "content_scripts": [
     {
       "matches": [
@@ -28,6 +32,12 @@
       "js": [
         "contentScript.js"
       ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["models/universal-sentence-encoder/*"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

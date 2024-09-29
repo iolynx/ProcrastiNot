@@ -10,16 +10,16 @@ import './popup.css';
   // To get storage access, we have to mention it in `permissions` property of manifest.json file
   // More information on Permissions can we found at
   // https://developer.chrome.com/extensions/declare_permissions
-  const counterStorage = {
+  const activatedStorage = {
     get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
+      chrome.storage.sync.get(['activationStatus'], (result) => {
+        cb(result.activationStatus);
       });
     },
     set: (value, cb) => {
       chrome.storage.sync.set(
         {
-          count: value,
+          activationStatus: value,
         },
         () => {
           cb();
@@ -28,23 +28,60 @@ import './popup.css';
     },
   };
 
-  function setupCounter(initialValue = 0) {
+
+
+  function setupActivation(initialValue = "Not Activated"){
+    document.getElementById('activationStatus').innerHTML = initialValue;
+    document.getElementById('activate').addEventListener('click', () => {
+      updateActivation();
+    });
+  }
+
+  function updateActivation() {
+    activatedStorage.get((activationStatus) => {
+      let newStatus;
+      let btnText;
+      if (activationStatus == "Not Activated"){
+        newStatus = "Activated";
+        btnText = "Deactivate Monitoring";
+        console.log(activationStatus);
+
+      }
+      else if (activationStatus == "Activated"){
+        newStatus = "Not Activated";
+        btnText = "Activate Monitoring";
+      }
+     activatedStorage.set(newStatus, () => {
+        document.getElementById('activationStatus').innerHTML = newStatus;
+        document.getElementById('activate').innerHTML = btnText;
+
+        // Communicate with content script of
+        // active tab by sending a message
+      });
+
+    });
+
+
+  }
+
+
+  function setupTimer(initialValue = 0) {
     document.getElementById('counter').innerHTML = initialValue;
 
     document.getElementById('incrementBtn').addEventListener('click', () => {
-      updateCounter({
+      updateTimer({
         type: 'INCREMENT',
       });
     });
 
     document.getElementById('decrementBtn').addEventListener('click', () => {
-      updateCounter({
+      updateTimer({
         type: 'DECREMENT',
       });
     });
   }
 
-  function updateCounter({ type }) {
+  function updateTimer({ type }) {
     counterStorage.get((count) => {
       let newCount;
 
@@ -81,21 +118,21 @@ import './popup.css';
     });
   }
 
-  function restoreCounter() {
+  function restoreActivation() {
     // Restore count value
-    counterStorage.get((count) => {
-      if (typeof count === 'undefined') {
+    activatedStorage.get((activationStatus) => {
+      if (typeof activationStatus === "undefined") {
         // Set counter value as 0
-        counterStorage.set(0, () => {
-          setupCounter(0);
+        activatedStorage.set("Not Activated", () => {
+          setupActivation("Not Activated");
         });
       } else {
-        setupCounter(count);
+        setupActivation(activationStatus);
       }
     });
   }
 
-  document.addEventListener('DOMContentLoaded', restoreCounter);
+  document.addEventListener('DOMContentLoaded', restoreActivation);
 
   // Communicate with background file by sending a message
   chrome.runtime.sendMessage(
@@ -106,7 +143,7 @@ import './popup.css';
       },
     },
     (response) => {
-      console.log(response.message);
+      console.log("i have sex");
     }
   );
 })();

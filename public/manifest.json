@@ -20,6 +20,7 @@
     "storage",
     "tabs",
     "activeTab",
+    "webNavigation",
     "scripting"
   ],
   "host_permissions": ["*://*/*"],
@@ -28,7 +29,7 @@
       "matches": [
         "<all_urls>"
       ],
-      "run_at": "document_idle",
+      "run_at": "document_end",
       "js": [
         "contentScript.js"
       ]
@@ -39,5 +40,8 @@
       "resources": ["models/universal-sentence-encoder/*"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }

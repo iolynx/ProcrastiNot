@@ -1,14 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>ProcrastiNot</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <div class="app">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>ProcrastiNot</title>
+  <link rel="stylesheet" href="popup.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+</head>
+
+<body>
+
+  <button id="settings" class="settings-button"><i class="fa fa-cog" aria-hidden="true" style="font-size: 24px;"></i></button>
+  <div class="app">
+    <div class="main-content">
       <p class="title">ProcrastiNot</p>
-      <div id="counter" class="counter"></div>
+      <p class="subtitle">Timer</p>
+    
+      <div class="timer">
+        <span id="minutes" contenteditable="true" type="number" class="scrollable" value="10" min="00" max="59">10</span>:
+        <span id="seconds" contenteditable="true" type="number" class="scrollable" value="00" min="00" max="59">30</span>
+      </div>
+      
+
       <div class="button-container">
         <button id="activate" class="button">Activate Monitoring</button>
       </div>
@@ -17,14 +30,22 @@
 
       <p class="subtitle">Monitoring Status: <code id="activationStatus"></code></p>
     </div>
+    <div id="settings-content" style="display: none;">
+      <p class="subtitle">Settings</p>
+      <p>Here you can adjust your settings:</p>
+      <!-- Add your settings controls here -->
+      <button id="backBtn">Back</button>
 
-    <script src="popup.js"></script>
+    </div>
+  </div>
 
-    <!--
-      This HTML file opens when you click on icon from the toolbar.
 
+  <script src="popup.js"></script>
+
+  <!--
       To begin the development, run `npm run watch`.
       To create a production bundle, use `npm run build`.
     -->
-  </body>
+</body>
+
 </html>

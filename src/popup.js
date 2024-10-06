@@ -30,7 +30,7 @@ import './popup.css';
 
 
 
-  function setupActivation(initialValue = "Not Activated"){
+  function setupActivation(initialValue = "Not Activated") {
     document.getElementById('activationStatus').innerHTML = initialValue;
     document.getElementById('activate').addEventListener('click', () => {
       updateActivation();
@@ -41,17 +41,17 @@ import './popup.css';
     activatedStorage.get((activationStatus) => {
       let newStatus;
       let btnText;
-      if (activationStatus == "Not Activated"){
+      if (activationStatus == "Not Activated") {
         newStatus = "Activated";
         btnText = "Deactivate Monitoring";
         console.log(activationStatus);
 
       }
-      else if (activationStatus == "Activated"){
+      else if (activationStatus == "Activated") {
         newStatus = "Not Activated";
         btnText = "Activate Monitoring";
       }
-     activatedStorage.set(newStatus, () => {
+      activatedStorage.set(newStatus, () => {
         document.getElementById('activationStatus').innerHTML = newStatus;
         document.getElementById('activate').innerHTML = btnText;
 
@@ -133,7 +133,79 @@ import './popup.css';
   }
 
   document.addEventListener('DOMContentLoaded', restoreActivation);
+  document.addEventListener('DOMContentLoaded', () => {
+    const minutesElement = document.getElementById('minutes');
+    const secondsElement = document.getElementById('seconds');
 
+    const MIN_MINUTES = 0;
+    const MAX_MINUTES = 59;
+    const MAX_SECONDS = 30;
+    const MIN_SECONDS = 0;
+
+    function setCaretAtEnd(element) {
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(element);
+      range.collapse(false);  // Set the cursor to the end
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }    
+
+
+    function convertToString(value) {
+      return value.toString().padStart(2, '0');  // Always pad the string to 2 digits 
+    }
+
+    // Add event listeners for scrolling
+    minutesElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY) === -1 ? 1 : -1;  // Scrolling up increases, down decreases
+      let value = parseInt(minutesElement.textContent, 10);
+      value += delta;
+      if (value < MIN_MINUTES) value = MIN_MINUTES;
+      if (value > MAX_MINUTES) value = MAX_MINUTES;
+
+      minutesElement.textContent = value.toString().padStart(2, '0');
+    });
+
+    secondsElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY) === -1 ? 30 : -30;  // Scrolling up increases, down decreases
+      let value = parseInt(secondsElement.textContent, 10);
+      value += delta;
+      if (value < MIN_SECONDS) value = MAX_SECONDS;
+      if (value > MAX_SECONDS) value = MIN_SECONDS;
+
+      secondsElement.textContent = value.toString().padStart(2, '0');
+    });
+
+    minutesElement.addEventListener('input', () => {
+      let currentValue = parseInt(minutesElement.textContent, 10);
+      console.log(currentValue, ' minutes');
+      if (isNaN(currentValue) || currentValue < 0) {
+        minutesElement.textContent = '00';
+      } else if (currentValue > 59) {
+        minutesElement.textContent = '59';
+      }
+      else {
+        minutesElement.textContent = convertToString(currentValue);
+      }
+      setCaretAtEnd(minutesElement);
+    })
+
+    secondsElement.addEventListener('input', () => {
+      let currentValue = parseInt(secondsElement.textContent, 10);
+      console.log(currentValue, ' seconds');
+      if (isNaN(currentValue) || currentValue < 0) {
+        secondsElement.textContent = '00';
+      } else if (currentValue > 59) {
+        secondsElement.textContent = '59';
+      } else {
+        secondsElement.textContent = convertToString(currentValue);
+      }
+      setCaretAtEnd(secondsElement);
+    })
+  })
   // Communicate with background file by sending a message
   chrome.runtime.sendMessage(
     {

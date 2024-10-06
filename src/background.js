@@ -71,6 +71,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
     if (newVal == "Activated") {
         isFocusMode = true;
+        checkActiveTabNow();
     }
     else {
         isFocusMode = false;
@@ -81,6 +82,23 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 
 // --------------------------- Main Func --------------------
+
+
+async function checkActiveTabNow(){
+    chrome.tabs.query({active: true, currentWindow: true}, async (tabs) =>{
+        const activeTab = tabs[0];
+
+        if(activeTab){
+            console.log(`Checking  active tab: ${activeTab.title}, ID: ${activeTab.id}`);
+            await chrome.scripting.executeScript({
+                target: { tabId: activeTab.id},
+                files: ["contentScript.js"]
+            });
+            analyzeTab(activeTab, activeTab.id);
+
+        }
+    })
+}
 
 async function analyzeTab(tab, tabId) {
     console.log(`Tab activated: ${tab.title} (ID: ${tab.id})`);
@@ -94,9 +112,13 @@ async function analyzeTab(tab, tabId) {
             const pageText = response.pageText;
             console.log(`we got a response from ${pageTitle}`);
 
-            const embeddings = await model.embed([pageTitle]);
+            
+            // let startTime = console.time();
+            console.log(pageText);
+            const textEmbeddings = await model.embed([pageText]);
+            const titleEmbeddings = await model.embed([pageTitle]);
             console.log("embeddings are embedded");
-            const prediction = await analyzeEmbeddings(embeddings.arraySync()[0]);
+            const prediction = await analyzeEmbeddings(titleEmbeddings.arraySync()[0], textEmbeddings.arraySync()[0]);
 
             console.log(`This tab is classified as ${prediction}`);
 
@@ -111,7 +133,7 @@ async function analyzeTab(tab, tabId) {
 // ------------------------- AI STUFF ---------------------------------
 
 
-async function analyzeEmbeddings(embedding) {
+async function analyzeEmbeddings(embedding, embedding2) {
     // Predefined embeddings for focus and distraction categories
     const focusExamples = [
         "work project",
@@ -121,6 +143,9 @@ async function analyzeEmbeddings(embedding) {
         "stackoverflow",
         "geeksforgeeks",
         "java",
+        "programming",
+        "c",
+        "computer",
         "python",
         "github"
     ];
@@ -134,6 +159,11 @@ async function analyzeEmbeddings(embedding) {
         "celebrities",
         "fashion",
         "trailer",
+        "game",
+        "gaming",
+        "montage",
+        "trending",
+        "Troll",
         "valorant",
         "instagram",
         "facebook",
@@ -150,11 +180,16 @@ async function analyzeEmbeddings(embedding) {
     // Calculate average similarity between the tab's embedding and the focus/distraction categories
     const focusScore = averageSimilarity(embedding, focusEmbeddings);
     const distractionScore = averageSimilarity(embedding, distractionEmbeddings);
+    const focusScore2 = averageSimilarity(embedding2, focusEmbeddings);
 
-    console.log("Focus Score: ", focusScore, "Distraction Score: ", distractionScore);
+    console.log("Focus Score (Title): ", focusScore, "Focus Score (Content): ", focusScore2);
 
     // Decide based on threshold
-    return focusScore > distractionScore ? "focus" : "distraction";
+    // return focusScore > distractionScore ? "focus" : "distraction";
+    if(focusScore > distractionScore || focusScore2 > 0.3 ){
+        return "focus";
+    }
+    return "distraction";
 }
 
 // Function to generate embeddings using the Universal Sentence Encoder

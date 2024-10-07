@@ -8,6 +8,7 @@ import * as use from '@tensorflow-models/universal-sentence-encoder';
 
 let isFocusMode = false;
 let model = null;
+let focusPhrases = ['testing'];
 
 chrome.runtime.onInstalled.addListener(async () => {
     console.log("Extension Installed");
@@ -114,7 +115,7 @@ async function analyzeTab(tab, tabId) {
 
             
             // let startTime = console.time();
-            console.log(pageText);
+            // console.log(pageText);
             const textEmbeddings = await model.embed([pageText]);
             const titleEmbeddings = await model.embed([pageTitle]);
             console.log("embeddings are embedded");
@@ -129,13 +130,29 @@ async function analyzeTab(tab, tabId) {
     });
 }
 
+// to add and remove phrases 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'addPhrase') {
+      focusPhrases.push(message.phrase);
+      console.log(focusPhrases);
+      sendResponse({ success: true });
+    }
+    if (message.type === 'removePhrase') {
+      focusPhrases = focusPhrases.filter(phrase => phrase !== message.phrase);
+      sendResponse({ success: true });
+    }
+    if (message.type === 'getPhrases') {
+      sendResponse({ phrases: focusPhrases });
+    }
+  });
+
 
 // ------------------------- AI STUFF ---------------------------------
 
 
-async function analyzeEmbeddings(embedding, embedding2) {
+async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
     // Predefined embeddings for focus and distraction categories
-    const focusExamples = [
+    let originalFocusPhrases = [
         "work project",
         "study material",
         "coding assignment",
@@ -145,6 +162,7 @@ async function analyzeEmbeddings(embedding, embedding2) {
         "java",
         "programming",
         "c",
+        "c++",
         "computer",
         "python",
         "github"
@@ -174,15 +192,19 @@ async function analyzeEmbeddings(embedding, embedding2) {
     ];
 
     // Generate embeddings for the predefined examples
-    const focusEmbeddings = await Promise.all(focusExamples.map(async (text) => await embedText(text)));
+    let focusPhrasesFinal = focusPhrases.concat(originalFocusPhrases);
+    console.log(focusPhrasesFinal);
+    const focusEmbeddings = await Promise.all(focusPhrasesFinal.map(async (text) => await embedText(text)));
+    console.log(focusEmbeddings);
     const distractionEmbeddings = await Promise.all(distractionExamples.map(async (text) => await embedText(text)));
 
     // Calculate average similarity between the tab's embedding and the focus/distraction categories
-    const focusScore = averageSimilarity(embedding, focusEmbeddings);
-    const distractionScore = averageSimilarity(embedding, distractionEmbeddings);
-    const focusScore2 = averageSimilarity(embedding2, focusEmbeddings);
+    const focusScore = averageSimilarity(titleEmbeddings, focusEmbeddings);
+    const distractionScore = averageSimilarity(titleEmbeddings, distractionEmbeddings);
+    // const distractionScore = 1 - focusScore;
+    const focusScore2 = averageSimilarity(contentEmbeddings, focusEmbeddings);
 
-    console.log("Focus Score (Title): ", focusScore, "Focus Score (Content): ", focusScore2);
+    console.log("Focus Score (Title): ", focusScore, "Focus Score (Content): ", focusScore2, "Distraction Score: ", distractionScore);
 
     // Decide based on threshold
     // return focusScore > distractionScore ? "focus" : "distraction";

@@ -105,10 +105,10 @@ async function analyzeEmbeddings(embeddings) {
 
 
 async function oldanalyzeEmbeddings(embedding) {
-  const focusExamples = ["work project", "study material", "coding assignment"];
+  const focusPhrases = ["work project", "study material", "coding assignment"];
   const distractionExamples = ["entertainment news", "funny video", "social media post", "gaming news"];
 
-  const focusEmbeddings = await Promise.all(focusExamples.map(async (text) => await embedText(model, text)));
+  const focusEmbeddings = await Promise.all(focusPhrases.map(async (text) => await embedText(model, text)));
   const distractionEmbeddings = await Promise.all(distractionExamples.map(async (text) => await embedText(model, text)));
 
   const focusScore = averageSimilarity(embedding, focusEmbeddings);

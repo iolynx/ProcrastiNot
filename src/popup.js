@@ -206,6 +206,84 @@ import './popup.css';
       setCaretAtEnd(secondsElement);
     })
   })
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const mainContent = document.getElementById('main-content');
+    const settingsContent = document.getElementById('settings-content');
+    const settingsBtn = document.getElementById('settings-button');
+    const backBtn = document.getElementById('back-button');
+
+    settingsBtn.addEventListener('click', () => {
+      mainContent.style.display = 'none';
+      settingsContent.style.display = 'block';
+    });
+  
+    // Go back to the main page
+    backBtn.addEventListener('click', () => {
+      settingsContent.style.display = 'none';
+      mainContent.style.display = 'block';
+    });
+  })
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const addButton = document.getElementById('add-phrase-button');
+    const phraseInput = document.getElementById('focus-phrase-input');
+    const addedPhrasesContainer = document.getElementById('added-phrases-container');
+  
+    // To store the phrases in the background
+    let phrases = [];
+  
+    // Function to add a phrase
+    function addPhrase(phrase) {
+      phrases.push(phrase);
+      chrome.runtime.sendMessage({ type: 'addPhrase', phrase });
+      renderPhrases();
+    }
+  
+    // Function to remove a phrase
+    function removePhrase(phrase) {
+      phrases = phrases.filter(p => p !== phrase);
+      chrome.runtime.sendMessage({ type: 'removePhrase', phrase });
+      renderPhrases();
+    }
+  
+    // Function to render the phrases on the UI
+    function renderPhrases() {
+      addedPhrasesContainer.innerHTML = '';  // Clear the container
+      phrases.forEach((phrase) => {
+        const phraseBox = document.createElement('div');
+        phraseBox.className = 'phrase-box';
+        phraseBox.textContent = phrase;
+  
+        // Add remove button inside the phrase box
+        const removeButton = document.createElement('button');
+        removeButton.className = 'remove-button';
+        removeButton.innerHTML = 'x';
+        removeButton.onclick = () => removePhrase(phrase);
+        
+        phraseBox.appendChild(removeButton);
+        addedPhrasesContainer.appendChild(phraseBox);
+      });
+    }
+  
+    // Add button click event listener
+    addButton.addEventListener('click', () => {
+      const phrase = phraseInput.value.trim();
+      if (phrase) {
+        addPhrase(phrase);
+        phraseInput.value = '';  // Clear the input
+      }
+    });
+  
+    // Load existing phrases from background on page load
+    chrome.runtime.sendMessage({ type: 'getPhrases' }, (response) => {
+      phrases = response.phrases || [];
+      renderPhrases();
+    });
+  });
+
+  
   // Communicate with background file by sending a message
   chrome.runtime.sendMessage(
     {

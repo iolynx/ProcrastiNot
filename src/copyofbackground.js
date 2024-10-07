@@ -95,7 +95,7 @@ async function loadUSEModel() {
 
 async function analyzeEmbeddings(embedding) {
   // Predefined embeddings for focus and distraction categories
-  const focusExamples = [
+  const focusPhrases = [
     "work project", 
     "study material", 
     "coding assignment"
@@ -112,7 +112,7 @@ async function analyzeEmbeddings(embedding) {
   ];
 
   // Generate embeddings for the predefined examples
-  const focusEmbeddings = await Promise.all(focusExamples.map(async (text) => await embedText(text)));
+  const focusEmbeddings = await Promise.all(focusPhrases.map(async (text) => await embedText(text)));
   const distractionEmbeddings = await Promise.all(distractionExamples.map(async (text) => await embedText(text)));
 
   // Calculate average similarity between the tab's embedding and the focus/distraction categories

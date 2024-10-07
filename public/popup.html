@@ -6,13 +6,14 @@
   <title>ProcrastiNot</title>
   <link rel="stylesheet" href="popup.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
 </head>
 
 <body>
 
-  <button id="settings" class="settings-button"><i class="fa fa-cog" aria-hidden="true" style="font-size: 24px;"></i></button>
-  <div class="app">
-    <div class="main-content">
+  <div id="main-content">
+    <button id="settings-button" class="settings-button"><i class="fa fa-cog" aria-hidden="true" style="font-size: 24px;"></i></button>
+    <div class="app">
       <p class="title">ProcrastiNot</p>
       <p class="subtitle">Timer</p>
     
@@ -30,14 +31,30 @@
 
       <p class="subtitle">Monitoring Status: <code id="activationStatus"></code></p>
     </div>
-    <div id="settings-content" style="display: none;">
-      <p class="subtitle">Settings</p>
-      <p>Here you can adjust your settings:</p>
-      <!-- Add your settings controls here -->
-      <button id="backBtn">Back</button>
-
-    </div>
   </div>
+  <div id="settings-content" style="display: none;">
+    <button id="back-button" class="settings-button"><i class="fa fa-arrow-left fa-2x"></i></button>
+
+    <div class="app">
+      <p class="title">Settings</p>
+    
+      <div align="left">
+        <p class="subtitle">Customize your focus settings:</p>
+        <p class="midtitle">Custom Focus Phrases:</p>
+        <!-- Input and button for adding a new phrase -->
+        <div class="phrase-input-container">
+          <input id="focus-phrase-input" type="text" placeholder="Enter focus phrase" class="focus-input" />
+          <button id="add-phrase-button" class="button">Add</button>
+        </div>
+    
+        <!-- Section to display added phrases -->
+        <div id="added-phrases-container" class="added-phrases-section">
+          <!-- Phrases will be dynamically added here -->
+        </div>
+      </div>
+    
+    </div>
+    </div>
 
 
   <script src="popup.js"></script>

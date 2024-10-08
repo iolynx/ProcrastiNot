@@ -259,7 +259,8 @@ import './popup.css';
         // Add remove button inside the phrase box
         const removeButton = document.createElement('button');
         removeButton.className = 'remove-button';
-        removeButton.innerHTML = 'x';
+        removeButton.style='align-items: center;';
+        removeButton.innerHTML = '<i class="fa-solid fa-x fa-xs"></i>';
         removeButton.onclick = () => removePhrase(phrase);
         
         phraseBox.appendChild(removeButton);
@@ -293,7 +294,7 @@ import './popup.css';
       },
     },
     (response) => {
-      console.log("i have sex");
+      console.log("hello pop this is poppa (js) ");
     }
   );
 })();

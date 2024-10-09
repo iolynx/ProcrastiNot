@@ -2,6 +2,14 @@
 
 import './popup.css';
 
+
+const minutesElement = document.getElementById('minutes');
+const secondsElement = document.getElementById('seconds');
+
+
+
+
+
 (function () {
   // We will make use of Storage API to get and store `count` value
   // More information on Storage API can we found at
@@ -58,9 +66,7 @@ import './popup.css';
         // Communicate with content script of
         // active tab by sending a message
       });
-
     });
-
 
   }
 
@@ -81,42 +87,6 @@ import './popup.css';
     });
   }
 
-  function updateTimer({ type }) {
-    counterStorage.get((count) => {
-      let newCount;
-
-      if (type === 'INCREMENT') {
-        newCount = count + 1;
-      } else if (type === 'DECREMENT') {
-        newCount = count - 1;
-      } else {
-        newCount = count;
-      }
-
-      counterStorage.set(newCount, () => {
-        document.getElementById('counter').innerHTML = newCount;
-
-        // Communicate with content script of
-        // active tab by sending a message
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const tab = tabs[0];
-
-          chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'COUNT',
-              payload: {
-                count: newCount,
-              },
-            },
-            (response) => {
-              console.log('Current count value passed to contentScript file');
-            }
-          );
-        });
-      });
-    });
-  }
 
   function restoreActivation() {
     // Restore count value
@@ -134,9 +104,13 @@ import './popup.css';
 
   document.addEventListener('DOMContentLoaded', restoreActivation);
   document.addEventListener('DOMContentLoaded', () => {
+
+    const hoursElement = document.getElementById('hours');
     const minutesElement = document.getElementById('minutes');
     const secondsElement = document.getElementById('seconds');
 
+    const MAX_HOURS = 24;
+    const MIN_HOURS = 0;
     const MIN_MINUTES = 0;
     const MAX_MINUTES = 59;
     const MAX_SECONDS = 30;
@@ -157,6 +131,18 @@ import './popup.css';
     }
 
     // Add event listeners for scrolling
+
+    hoursElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY) === -1 ? 1 : -1;  // Scrolling up increases, down decreases
+      let value = parseInt(hoursElement.textContent, 10);
+      value += delta;
+      if (value < MIN_HOURS) value = MAX_HOURS;
+      if (value > MAX_HOURS) value = MIN_HOURS;
+
+      hoursElement.textContent = value.toString().padStart(2, '0');
+    });
+
     minutesElement.addEventListener('wheel', (e) => {
       e.preventDefault();
       const delta = Math.sign(e.deltaY) === -1 ? 1 : -1;  // Scrolling up increases, down decreases
@@ -179,9 +165,21 @@ import './popup.css';
       secondsElement.textContent = value.toString().padStart(2, '0');
     });
 
+    hoursElement.addEventListener('input', () => {
+      let currentValue = parseInt(hoursElement.textContent, 10);
+      if (isNaN(currentValue) || currentValue < 0) {
+        hoursElement.textContent = '00';
+      } else if (currentValue > 24) {
+        hoursElement.textContent = '24';
+      }
+      else {
+        hoursElement.textContent = convertToString(currentValue);
+      }
+      setCaretAtEnd(hoursElement);
+    })
+
     minutesElement.addEventListener('input', () => {
       let currentValue = parseInt(minutesElement.textContent, 10);
-      console.log(currentValue, ' minutes');
       if (isNaN(currentValue) || currentValue < 0) {
         minutesElement.textContent = '00';
       } else if (currentValue > 59) {
@@ -195,7 +193,6 @@ import './popup.css';
 
     secondsElement.addEventListener('input', () => {
       let currentValue = parseInt(secondsElement.textContent, 10);
-      console.log(currentValue, ' seconds');
       if (isNaN(currentValue) || currentValue < 0) {
         secondsElement.textContent = '00';
       } else if (currentValue > 59) {
@@ -298,3 +295,11 @@ import './popup.css';
     }
   );
 })();
+
+
+
+// Utility functions
+function convertToString(value) {
+  return value.toString().padStart(2, '0');  // Converts to a string and pads with 0
+}
+

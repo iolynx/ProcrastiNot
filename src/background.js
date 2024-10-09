@@ -9,12 +9,40 @@ import * as use from '@tensorflow-models/universal-sentence-encoder';
 let isFocusMode = false;
 let model = null;
 let focusPhrases = ['testing'];
+let exDistractionPhrases = [];
+let distractionExamples = [
+    "entertainment news",
+    "video",
+    "funny",
+    "social media post",
+    "gaming news",
+    "celebrities",
+    "fashion",
+    "trailer",
+    "game",
+    "gaming",
+    "montage",
+    "trending",
+    "Troll",
+    "valorant",
+    "instagram",
+    "facebook",
+    "chess",
+    "edit",
+    "brainrot",
+    "taylor swift"
+];
 
 chrome.runtime.onInstalled.addListener(async () => {
     console.log("Extension Installed");
     let isFocusMode = false;
+    const startTime = performance.now();
+
     model = await use.load();
-    console.log("model is loaded");
+    
+    let modelLoadTime = performance.now() - startTime;
+    console.log("Model is Loaded");
+    console.log(`Model Loading took ${modelLoadTime.toFixed(2)} ms.`);
 });
 
 
@@ -111,17 +139,24 @@ async function analyzeTab(tab, tabId) {
         } else {
             const pageTitle = response.title;
             const pageText = response.pageText;
-            console.log(`we got a response from ${pageTitle}`);
+            console.log(`We got a response from ${pageTitle}`);
 
             
-            // let startTime = console.time();
-            // console.log(pageText);
+            let startTime = performance.now();
+
             const textEmbeddings = await model.embed([pageText]);
             const titleEmbeddings = await model.embed([pageTitle]);
-            console.log("embeddings are embedded");
+
+            let pageEmbeddingsTime = performance.now() - startTime;
+            console.log("Page Embeddings created.");
+            console.log(`Page embeddings took ${pageEmbeddingsTime.toFixed(2)} ms.`)
+
+            let predictionStartTime = performance.now();
             const prediction = await analyzeEmbeddings(titleEmbeddings.arraySync()[0], textEmbeddings.arraySync()[0]);
+            let predictionTime = performance.now() - predictionStartTime;
 
             console.log(`This tab is classified as ${prediction}`);
+            console.log(`Prediction took ${predictionTime.toFixed(2)} ms.`);
 
             if(prediction === 'distraction'){
                 chrome.tabs.remove(tabId);
@@ -134,11 +169,26 @@ async function analyzeTab(tab, tabId) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'addPhrase') {
       focusPhrases.push(message.phrase);
-      console.log(focusPhrases);
+    
+      const index = distractionExamples.indexOf(message.phrase);
+      if(index !== -1){
+        distractionExamples.splice(index, 1);
+        exDistractionPhrases.push(message.phrase);
+        console.log(focusPhrases);
+        console.log(distractionExamples);
+      }
+
       sendResponse({ success: true });
     }
     if (message.type === 'removePhrase') {
       focusPhrases = focusPhrases.filter(phrase => phrase !== message.phrase);
+      const index = exDistractionPhrases.indexOf(message.phrase);
+      if(index !== -1){
+        distractionExamples.push(message.phrase);
+
+        console.log(focusPhrases);
+        console.log(distractionExamples);
+      }
       sendResponse({ success: true });
     }
     if (message.type === 'getPhrases') {
@@ -151,6 +201,55 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 
 async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
+    // Predefined focus and distraction phrases
+    let originalFocusPhrases = [
+        "work project",
+        "study material",
+        "coding assignment",
+        "c++ project",
+        "stackoverflow",
+        "geeksforgeeks",
+        "java",
+        "programming",
+        "c",
+        "c++",
+        "computer",
+        "python",
+        "github"
+    ];
+
+
+
+    // Combine any custom focus phrases with predefined ones
+    let focusPhrasesFinal = focusPhrases.concat(originalFocusPhrases);
+
+    // Generate embeddings for focus and distraction phrases
+    const focusEmbeddings = await Promise.all(focusPhrasesFinal.map(async (text) => await embedText(text)));
+    const distractionEmbeddings = await Promise.all(distractionExamples.map(async (text) => await embedText(text)));
+
+    // Calculate maximum similarity for both title and content embeddings
+    const maxFocusSimilarityTitle = maxSimilarity(titleEmbeddings, focusEmbeddings);
+    const maxDistractionSimilarityTitle = averageSimilarity(titleEmbeddings, distractionEmbeddings);
+    const maxFocusSimilarityContent = maxSimilarity(contentEmbeddings, focusEmbeddings);
+
+    console.log("Max Focus Score (Title): ", maxFocusSimilarityTitle, 
+                "Max Focus Score (Content): ", maxFocusSimilarityContent, 
+                "Max Distraction Score: ", maxDistractionSimilarityTitle);
+
+    // Logic to determine focus or distraction
+    if (maxDistractionSimilarityTitle >= 0.35) {
+        return "distraction";
+    }
+
+    if (maxFocusSimilarityTitle > 0.46 || maxFocusSimilarityContent > 0.46) {
+        return "focus";
+    }
+
+    return "distraction";
+
+}
+
+async function analyzeEmbeddingsAvg(titleEmbeddings, contentEmbeddings) {
     // Predefined embeddings for focus and distraction categories
     let originalFocusPhrases = [
         "work project",
@@ -199,6 +298,7 @@ async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
     const distractionEmbeddings = await Promise.all(distractionExamples.map(async (text) => await embedText(text)));
 
     // Calculate average similarity between the tab's embedding and the focus/distraction categories
+
     const focusScore = averageSimilarity(titleEmbeddings, focusEmbeddings);
     const distractionScore = averageSimilarity(titleEmbeddings, distractionEmbeddings);
     // const distractionScore = 1 - focusScore;
@@ -208,7 +308,11 @@ async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
 
     // Decide based on threshold
     // return focusScore > distractionScore ? "focus" : "distraction";
-    if(focusScore > distractionScore || focusScore2 > 0.3 ){
+    if(distractionScore > 0.3){
+        return "distraction";
+    }
+
+    if((focusScore > 0.28 && focusScore2 > 0.24)){
         return "focus";
     }
     return "distraction";
@@ -239,3 +343,16 @@ function averageSimilarity(embedding, exampleEmbeddings) {
     return similarities.reduce((sum, sim) => sum + sim, 0) / similarities.length;
 }
 
+// Function to calculate the maximum similarity between the embeddings
+function maxSimilarity(tabEmbedding, exampleEmbeddings) {
+    let maxSimilarity = 0;
+    
+    exampleEmbeddings.forEach((exampleEmbedding) => {
+        const similarity = cosineSimilarity(tabEmbedding, exampleEmbedding);
+        if (similarity > maxSimilarity) {
+            maxSimilarity = similarity;
+        }
+    });
+
+    return maxSimilarity;
+}

@@ -40,9 +40,21 @@ chrome.runtime.onInstalled.addListener(async () => {
 
     model = await use.load();
     
-    let modelLoadTime = performance.now() - startTime;
+    const modelLoadTime = (performance.now() - startTime).toFixed();
     console.log("Model is Loaded");
-    console.log(`Model Loading took ${modelLoadTime.toFixed(2)} ms.`);
+    console.log("%cINFO:", "color:aquamarine", "Model Loading took", modelLoadTime, "ms.");
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if(message.action == 'start-timer'){
+        startCountdown(message.time);
+    }
+    else if(message.action == 'stop-timer'){
+        stopCountdown();
+    }
+    else if(message.action == 'get-timer'){
+        sendResponse({time : countdownTime});
+    }
 });
 
 
@@ -109,8 +121,47 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 });
 
 
+// -------------------------- Timer Function --------------------------
 
-// --------------------------- Main Func --------------------
+let timerInterval = null;
+let countdownTime = {hours: 0, minutes: 10, seconds: 0};
+
+function startCountdown(startTime) {
+    countdownTime = startTime;
+    if (timerInterval === null) {
+      timerInterval = setInterval(() => {
+        console.log(countdownTime);
+        if (countdownTime.seconds <= 0) {
+          if (countdownTime.minutes === 0) {
+            if(countdownTime.hours === 0){
+                stopCountdown();
+                return;
+            }
+            countdownTime.hours -= 1;
+            countdownTime.minutes = 59;
+          }
+          countdownTime.minutes -= 1;
+          countdownTime.seconds = 59;
+        } else {
+          countdownTime.seconds -= 1;
+        }
+  
+        // Send the updated time to the popup
+        chrome.runtime.sendMessage({ action: 'update-timer', time: countdownTime });
+      }, 1000);
+    }
+  }
+
+function stopCountdown() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    // countdownTime = { minutes: 10, seconds: 0 }; // Reset to default time
+
+    // Notify popup that the timer has reset
+    // chrome.runtime.sendMessage({ action: 'timer-reset', time: countdownTime });
+}
+
+// -------------------------- Main Function --------------------------
 
 
 async function checkActiveTabNow(){
@@ -147,16 +198,16 @@ async function analyzeTab(tab, tabId) {
             const textEmbeddings = await model.embed([pageText]);
             const titleEmbeddings = await model.embed([pageTitle]);
 
-            let pageEmbeddingsTime = performance.now() - startTime;
+            const pageEmbeddingsTime = performance.now() - startTime;
             console.log("Page Embeddings created.");
-            console.log(`Page embeddings took ${pageEmbeddingsTime.toFixed(2)} ms.`)
+            console.log("%cINFO:", "color:aquamarine", "Page embeddings took", pageEmbeddingsTime.toFixed(2), "ms.");
 
             let predictionStartTime = performance.now();
             const prediction = await analyzeEmbeddings(titleEmbeddings.arraySync()[0], textEmbeddings.arraySync()[0]);
-            let predictionTime = performance.now() - predictionStartTime;
+            const predictionTime = performance.now() - predictionStartTime;
 
             console.log(`This tab is classified as ${prediction}`);
-            console.log(`Prediction took ${predictionTime.toFixed(2)} ms.`);
+            console.log("%cINFO:", "color:aquamarine", "Prediction took", predictionTime.toFixed(2), "ms.");
 
             if(prediction === 'distraction'){
                 chrome.tabs.remove(tabId);
@@ -174,8 +225,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if(index !== -1){
         distractionExamples.splice(index, 1);
         exDistractionPhrases.push(message.phrase);
-        console.log(focusPhrases);
-        console.log(distractionExamples);
+        // console.log(focusPhrases);
+        // console.log(distractionExamples);
       }
 
       sendResponse({ success: true });
@@ -186,8 +237,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if(index !== -1){
         distractionExamples.push(message.phrase);
 
-        console.log(focusPhrases);
-        console.log(distractionExamples);
+        // console.log(focusPhrases);
+        // console.log(distractionExamples);
       }
       sendResponse({ success: true });
     }
@@ -232,6 +283,7 @@ async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
     const maxDistractionSimilarityTitle = averageSimilarity(titleEmbeddings, distractionEmbeddings);
     const maxFocusSimilarityContent = maxSimilarity(contentEmbeddings, focusEmbeddings);
 
+    console.log("%cINFO:", "color:aquamarine");
     console.log("Max Focus Score (Title): ", maxFocusSimilarityTitle, 
                 "Max Focus Score (Content): ", maxFocusSimilarityContent, 
                 "Max Distraction Score: ", maxDistractionSimilarityTitle);

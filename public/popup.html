@@ -16,6 +16,10 @@
       <p class="title">ProcrastiNot</p>
       <p class="subtitle">Timer</p>
     
+      
+      <div class="supertitle">
+        HH : MM : SS     
+      </div>
       <div class="timer">
         <span id="hours" contenteditable="true" type="number" class="scrollable" value="01" min="00" max="24">01</span>:
         <span id="minutes" contenteditable="true" type="number" class="scrollable" value="10" min="00" max="59">10</span>:
@@ -44,6 +48,7 @@
         <div class="phrase-input-container">
           <input id="focus-phrase-input" type="text" placeholder="Enter focus phrase" class="focus-input"/>
           <button id="add-phrase-button" class="small-padding button"><i class="fa-solid fa-plus"></i></button>
+          <input type="submit" style="display:none"/>
         </div>
 
         <!-- Section to display added phrases -->

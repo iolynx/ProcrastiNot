@@ -3,9 +3,9 @@
 import './popup.css';
 
 
+const hoursElement = document.getElementById('hours');
 const minutesElement = document.getElementById('minutes');
 const secondsElement = document.getElementById('seconds');
-
 
 
 
@@ -46,6 +46,9 @@ const secondsElement = document.getElementById('seconds');
   }
 
   function updateActivation() {
+    let hoursVal = parseInt(hoursElement.textContent);
+    let minutesVal = parseInt(minutesElement.textContent);
+    let secondsVal = parseInt(secondsElement.textContent);
     activatedStorage.get((activationStatus) => {
       let newStatus;
       let btnText;
@@ -53,11 +56,16 @@ const secondsElement = document.getElementById('seconds');
         newStatus = "Activated";
         btnText = "Deactivate Monitoring";
         console.log(activationStatus);
+        chrome.runtime.sendMessage({action: 'start-timer', 
+          time : {hours: hoursVal, minutes: minutesVal, seconds: secondsVal}
+        });
 
       }
       else if (activationStatus == "Activated") {
         newStatus = "Not Activated";
         btnText = "Activate Monitoring";
+        chrome.runtime.sendMessage({action: 'stop-timer'});
+
       }
       activatedStorage.set(newStatus, () => {
         document.getElementById('activationStatus').innerHTML = newStatus;
@@ -105,6 +113,13 @@ const secondsElement = document.getElementById('seconds');
   document.addEventListener('DOMContentLoaded', restoreActivation);
   document.addEventListener('DOMContentLoaded', () => {
 
+    // get the initial state of the timer from background.js
+    chrome.runtime.sendMessage({ action: 'get-timer' }, (response) => {
+      if (response) {
+        updateTimer(response.time);
+      }
+    });
+
     const hoursElement = document.getElementById('hours');
     const minutesElement = document.getElementById('minutes');
     const secondsElement = document.getElementById('seconds');
@@ -128,6 +143,14 @@ const secondsElement = document.getElementById('seconds');
 
     function convertToString(value) {
       return value.toString().padStart(2, '0');  // Always pad the string to 2 digits 
+    }
+
+
+    //function to update the timer values
+    function updateTimer(time){
+      hoursElement.textContent = convertToString(time.hours);
+      minutesElement.textContent = convertToString(time.minutes);
+      secondsElement.textContent = convertToString(time.seconds);
     }
 
     // Add event listeners for scrolling
@@ -201,9 +224,18 @@ const secondsElement = document.getElementById('seconds');
         secondsElement.textContent = convertToString(currentValue);
       }
       setCaretAtEnd(secondsElement);
-    })
+    });
+
+    // add listeners to update the timer
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action == 'update-timer'){
+        updateTimer(message.time);
+      }
+    });
+
   })
 
+  // add event listeners for the buttons to go to the settings page and back
   document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.getElementById('main-content');
     const settingsContent = document.getElementById('settings-content');
@@ -223,6 +255,7 @@ const secondsElement = document.getElementById('seconds');
   })
 
 
+  // add event listeners for the buttons on the SETTINGS PAGE
   document.addEventListener('DOMContentLoaded', function () {
     const addButton = document.getElementById('add-phrase-button');
     const phraseInput = document.getElementById('focus-phrase-input');
@@ -273,28 +306,35 @@ const secondsElement = document.getElementById('seconds');
         phraseInput.value = '';  // Clear the input
       }
     });
+
+    phraseInput.addEventListener("keydown", function(event) {
+      if (event.key == "Enter"){
+        // event.preventDefault();
+        const phrase = phraseInput.value.trim();
+        if(phrase){
+          addPhrase(phrase);
+          phraseInput.value = '';
+          phraseInput.focus();
+        }
+      }
+    });
+
+
   
     // Load existing phrases from background on page load
     chrome.runtime.sendMessage({ type: 'getPhrases' }, (response) => {
       phrases = response.phrases || [];
       renderPhrases();
     });
+
+
   });
 
   
-  // Communicate with background file by sending a message
-  chrome.runtime.sendMessage(
-    {
-      type: 'GREETINGS',
-      payload: {
-        message: 'Hello, my name is Pop. I am from Popup.',
-      },
-    },
-    (response) => {
-      console.log("hello pop this is poppa (js) ");
-    }
-  );
+
 })();
+
+
 
 
 

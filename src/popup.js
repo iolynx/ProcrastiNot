@@ -38,8 +38,14 @@ const secondsElement = document.getElementById('seconds');
 
 
 
-  function setupActivation(initialValue = "Not Activated") {
+  function setupActivation(initialValue) {
+    console.log("in setup");
     document.getElementById('activationStatus').innerHTML = initialValue;
+    let btnText = "Activate Monitoring";
+    if(initialValue == "Activated"){
+      btnText = "Deactivate Monitoring";
+    }
+    document.getElementById('activate').innerHTML = btnText;
     document.getElementById('activate').addEventListener('click', () => {
       updateActivation();
     });
@@ -49,6 +55,7 @@ const secondsElement = document.getElementById('seconds');
     let hoursVal = parseInt(hoursElement.textContent);
     let minutesVal = parseInt(minutesElement.textContent);
     let secondsVal = parseInt(secondsElement.textContent);
+    console.log("in update");
     activatedStorage.get((activationStatus) => {
       let newStatus;
       let btnText;
@@ -68,11 +75,9 @@ const secondsElement = document.getElementById('seconds');
 
       }
       activatedStorage.set(newStatus, () => {
-        document.getElementById('activationStatus').innerHTML = newStatus;
         document.getElementById('activate').innerHTML = btnText;
-
-        // Communicate with content script of
-        // active tab by sending a message
+        document.getElementById('activationStatus').innerHTML = newStatus;
+        console.log("btn = " + btnText);
       });
     });
 
@@ -100,6 +105,7 @@ const secondsElement = document.getElementById('seconds');
     // Restore count value
     activatedStorage.get((activationStatus) => {
       if (typeof activationStatus === "undefined") {
+        console.log("its undefined");
         // Set counter value as 0
         activatedStorage.set("Not Activated", () => {
           setupActivation("Not Activated");

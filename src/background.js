@@ -1,6 +1,3 @@
-'use strict';
-
-
 import * as tf from '@tensorflow/tfjs';
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 
@@ -124,41 +121,81 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 // -------------------------- Timer Function --------------------------
 
 let timerInterval = null;
+let timerActive = false;
 let countdownTime = {hours: 0, minutes: 10, seconds: 0};
 
-function startCountdown(startTime) {
+
+function startCountdown(startTime){
     countdownTime = startTime;
-    if (timerInterval === null) {
-      timerInterval = setInterval(() => {
-        console.log(countdownTime);
-        if (countdownTime.seconds <= 0) {
-          if (countdownTime.minutes === 0) {
-            if(countdownTime.hours === 0){
-                stopCountdown();
-                return;
-            }
-            countdownTime.hours -= 1;
-            countdownTime.minutes = 59;
-          }
-          countdownTime.minutes -= 1;
-          countdownTime.seconds = 59;
-        } else {
-          countdownTime.seconds -= 1;
-        }
+    timerActive = true;
+    runTimer();
+}
+
+function runTimer() {
+    if (!timerActive) return;
   
-        // Send the updated time to the popup
-        chrome.runtime.sendMessage({ action: 'update-timer', time: countdownTime });
-      }, 1000);
+    // Update time
+    if (countdownTime.seconds > 0) {
+      countdownTime.seconds--;
+    } else if (countdownTime.minutes > 0) {
+      countdownTime.seconds = 59;
+      countdownTime.minutes--;
+    } else if (countdownTime.hours > 0) {
+      countdownTime.seconds = 59;
+      countdownTime.minutes = 59;
+      countdownTime.hours--;
+    } else {
+      // Timer finished
+      timerActive = false;
+      chrome.runtime.sendMessage({ action: 'timerFinished' });
+      return;
     }
-  }
+    
+  // Send the updated time to popup.js or other parts of the extension
+  chrome.runtime.sendMessage({
+    action: 'update-timer',
+    time: countdownTime
+  });
+
+  // Schedule the next tick
+  setTimeout(runTimer, 1000); // Recursively call with 1-second delay
+}
+
+
+// function startCountdown(startTime) {
+//     countdownTime = startTime;
+//     if (timerInterval === null) {
+//       timerInterval = setInterval(() => {
+//         console.log(countdownTime);
+//         if (countdownTime.seconds <= 0) {
+//           if (countdownTime.minutes === 0) {
+//             if(countdownTime.hours === 0){
+//                 stopCountdown();
+//                 return;
+//             }
+//             countdownTime.hours -= 1;
+//             countdownTime.minutes = 59;
+//           }
+//           countdownTime.minutes -= 1;
+//           countdownTime.seconds = 59;
+//         } else {
+//           countdownTime.seconds -= 1;
+//         }
+  
+//         // Send the updated time to the popup
+//         chrome.runtime.sendMessage({ action: 'update-timer', time: countdownTime });
+//       }, 1000);
+//     }
+//   }
 
 function stopCountdown() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    // countdownTime = { minutes: 10, seconds: 0 }; // Reset to default time
+    // clearInterval(timerInterval);
+    // timerInterval = null;
 
     // Notify popup that the timer has reset
     // chrome.runtime.sendMessage({ action: 'timer-reset', time: countdownTime });
+
+    timerActive = false;
 }
 
 // -------------------------- Main Function --------------------------

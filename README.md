@@ -3,8 +3,8 @@
 An intelligent extension to detect & prevent procrastination.
 
 ## Features
-Procrastinot uses an "idea" based whitelisting, as opposed to a website based white/blacklisting you see on other productivity based apps.
-It uses AI to weigh the text content on the webpage you're accessing, and closes any tabs that classify as "distraction". 
+Procrastinot uses an "idea" based whitelisting, as opposed to a website based white/blacklisting you see on other productivity extensions. <br/>
+It uses AI to weigh the text content on the webpage you're accessing, and closes any tabs that classify as a "distraction". 
 
 - Customizable "idea" whitelists
 - Built in Timer
@@ -12,7 +12,7 @@ It uses AI to weigh the text content on the webpage you're accessing, and closes
 
 ## Install
 
-[**Chrome** extension]() <!-- TODO: Add chrome extension link inside parenthesis -->
+[**Chrome** extension]() <!-- TODO: Add chrome extension link inside parenthesis --> <br/>
 Download this and add it to your Chrome extensions
 
 ## Contribution

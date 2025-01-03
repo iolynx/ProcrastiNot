@@ -75,6 +75,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
+
     await chrome.scripting.executeScript({
         target: { tabId: tabId},
         files: ["contentScript.js"]
@@ -162,39 +163,7 @@ function runTimer() {
 }
 
 
-// function startCountdown(startTime) {
-//     countdownTime = startTime;
-//     if (timerInterval === null) {
-//       timerInterval = setInterval(() => {
-//         console.log(countdownTime);
-//         if (countdownTime.seconds <= 0) {
-//           if (countdownTime.minutes === 0) {
-//             if(countdownTime.hours === 0){
-//                 stopCountdown();
-//                 return;
-//             }
-//             countdownTime.hours -= 1;
-//             countdownTime.minutes = 59;
-//           }
-//           countdownTime.minutes -= 1;
-//           countdownTime.seconds = 59;
-//         } else {
-//           countdownTime.seconds -= 1;
-//         }
-  
-//         // Send the updated time to the popup
-//         chrome.runtime.sendMessage({ action: 'update-timer', time: countdownTime });
-//       }, 1000);
-//     }
-//   }
-
 function stopCountdown() {
-    // clearInterval(timerInterval);
-    // timerInterval = null;
-
-    // Notify popup that the timer has reset
-    // chrome.runtime.sendMessage({ action: 'timer-reset', time: countdownTime });
-
     timerActive = false;
 }
 
@@ -303,7 +272,10 @@ async function analyzeEmbeddings(titleEmbeddings, contentEmbeddings) {
         "c++",
         "computer",
         "python",
-        "github"
+        "github",
+        "sudhakar atchala",
+        "compiler design",
+        "educational"
     ];
 
 
